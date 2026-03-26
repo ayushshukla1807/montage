@@ -125,6 +125,10 @@
       <download style="font-size: 6px" /> {{ $t('montage-round-download-results') }}
     </cdx-button>
 
+    <cdx-button @click="downloadReviews">
+      <comment style="font-size: 6px" /> {{ $t('montage-round-download-reviews') }}
+    </cdx-button>
+
     <cdx-button @click="downloadEntries">
       <image-multiple style="font-size: 6px" /> {{ $t('montage-round-download-entries') }}
     </cdx-button>
@@ -146,6 +150,7 @@ import Play from 'vue-material-design-icons/Play.vue'
 import Pause from 'vue-material-design-icons/Pause.vue'
 import Check from 'vue-material-design-icons/Check.vue'
 import Download from 'vue-material-design-icons/Download.vue'
+import Comment from 'vue-material-design-icons/Comment.vue'
 import ImageMultiple from 'vue-material-design-icons/ImageMultiple.vue'
 
 const { t: $t } = useI18n()
@@ -167,11 +172,8 @@ const remainingDays = computed(() => {
 const activateRound = () => {
   adminService
     .activateRound(props.round.id)
-    .then((data) => {
-      if (data.status === 'success') {
-        alertService.success($t('montage-round-activated'))
-      }
-
+    .then(() => {
+      alertService.success($t('montage-round-activated'))
       // Refresh the page
       location.reload()
     })
@@ -181,11 +183,8 @@ const activateRound = () => {
 const pauseRound = () => {
   adminService
     .pauseRound(props.round.id)
-    .then((data) => {
-      if (data.status === 'success') {
-        alertService.success($t('montage-round-paused'))
-      }
-
+    .then(() => {
+      alertService.success($t('montage-round-paused'))
       // Refresh the page
       location.reload()
     })
@@ -205,10 +204,8 @@ const finalizeRound = () => {
   if (shouldFinalize) {
     adminService
       .finalizeRound(props.round.id)
-      .then((data) => {
-        if (data.status === 'success') {
-          alertService.success($t('montage-round-finalized'))
-        }
+      .then(() => {
+        alertService.success($t('montage-round-finalized'))
         // Refresh the page
         location.reload()
       })
@@ -221,6 +218,11 @@ function downloadResults() {
   window.open(url)
 }
 
+function downloadReviews() {
+  const url = adminService.downloadReviews(props.round.id)
+  window.open(url)
+}
+
 function downloadEntries() {
   const url = adminService.downloadEntries(props.round.id)
   window.open(url)
@@ -230,7 +232,7 @@ function getRoundDetails(round) {
   adminService
     .getRound(round.id)
     .then((data) => {
-      roundDetails.value = data.data
+      roundDetails.value = data
     })
     .catch(alertService.error)
 }
@@ -239,7 +241,7 @@ function getRoundResults(round) {
   adminService
     .previewRound(round.id)
     .then((data) => {
-      roundResults.value = data.data
+      roundResults.value = data
     })
     .catch(alertService.error)
 }

@@ -280,7 +280,7 @@ function getRoundDetails(id) {
   jurorService
     .getRound(id)
     .then((response) => {
-      const r = response.data
+      const r = response
       round.value = r
       round.value.link = [r.id, r.canonical_url_name].join('-')
     })
@@ -291,7 +291,7 @@ function getPastVotes(id) {
   jurorService
     .getPastVotes(id)
     .then((response) => {
-      votes.value = response.data.map((vote) => ({
+      votes.value = response.map((vote) => ({
         ...vote,
         value: vote.value * 4 + 1
       }))
@@ -310,7 +310,7 @@ const loadMore = () => {
   return jurorService
     .getPastVotes(round.value.id, votes.value.length, sort.value.order_by, sort.value.sort)
     .then((response) => {
-      const newVotes = response.data.map((vote) => ({
+      const newVotes = response.map((vote) => ({
         ...vote,
         value: vote.value * 4 + 1
       }))

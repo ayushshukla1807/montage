@@ -286,12 +286,9 @@ const saveEditCampaign = () => {
 
   adminService
     .editCampaign(campaignId, payload)
-    .then((resp) => {
+    .then(() => {
       Promise.all([...added, ...removed].map(([func, param]) => func(campaignId, param)))
-
-      if (resp.status === 'success') {
-        reloadState()
-      }
+      reloadState()
     })
     .catch(alertService.error)
 
@@ -307,10 +304,8 @@ const archiveCampaign = () => {
 
   adminService
     .editCampaign(campaignId, data)
-    .then((resp) => {
-      if (resp.status === 'success') {
-        reloadState()
-      }
+    .then(() => {
+      reloadState()
     })
     .catch(alertService.error)
 }
@@ -320,10 +315,8 @@ const unarchiveCampaign = () => {
 
   adminService
     .editCampaign(campaignId, data)
-    .then((resp) => {
-      if (resp.status === 'success') {
-        reloadState()
-      }
+    .then(() => {
+      reloadState()
     })
     .catch(alertService.error)
 }
@@ -331,10 +324,8 @@ const unarchiveCampaign = () => {
 const closeCampaign = () => {
   adminService
     .finalizeCampaign(campaignId)
-    .then((resp) => {
-      if (resp.status === 'success') {
-        reloadState()
-      }
+    .then(() => {
+      reloadState()
     })
     .catch(alertService.error)
 }
@@ -347,9 +338,9 @@ const reloadState = () => {
   adminService
     .getCampaign(campaignId)
     .then((response) => {
-      campaign.value = response.data
-      campaignRounds.value = response.data?.rounds.filter((round) => round.status !== 'cancelled')
-      canCloseCampaign.value = response.data.status === 'active'
+      campaign.value = response
+      campaignRounds.value = response?.rounds.filter((round) => round.status !== 'cancelled')
+      canCloseCampaign.value = response.status === 'active'
     })
     .catch((error) => {
       if (error.response && error.response.status === 403) {

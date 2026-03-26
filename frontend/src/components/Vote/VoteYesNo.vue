@@ -265,7 +265,7 @@ const getNextImage = () => {
 
 const getTasks = () => {
   return jurorService.getRoundTasks(props.round.id, skips.value).then((response) => {
-    images.value = response.data.tasks
+    images.value = response.tasks
     rating.value.current = images.value?.[0]
     rating.value.currentIndex = 0
     rating.value.next = images.value?.[1] || null
@@ -297,7 +297,9 @@ function setRate(rate) {
         }
         // Refresh vote stats after each successful vote
         if (props.round.show_stats) {
-          jurorService.getRoundVotesStats(props.round.id).then(r => { votesStats.value = r.data })
+          jurorService.getRoundVotesStats(props.round.id).then((r) => {
+            votesStats.value = r
+          })
         }
         if (counter.value === 4 || !stats.value.total_open_tasks) {
           counter.value = 0
@@ -442,9 +444,10 @@ watch(voteContainer, () => {
 
 onMounted(() => {
   if (props.round.show_stats) {
-    jurorService.getRoundVotesStats(props.round.id).then(r => { votesStats.value = r.data })
+    jurorService.getRoundVotesStats(props.round.id).then((r) => {
+      votesStats.value = r
+    })
   }
-})
 })
 </script>
 

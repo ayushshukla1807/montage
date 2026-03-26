@@ -91,7 +91,7 @@ onMounted(() => {
   const fetchCoordinatorCampaigns = adminService
     .get()
     .then((response) => {
-      coordinatorCampaigns.value = response.data
+      coordinatorCampaigns.value = response
 
       // Order campaigns by open date (more recent at the top)
       coordinatorCampaigns.value.sort((campaign1, campaign2) => {
@@ -113,13 +113,13 @@ onMounted(() => {
   const fetchJurorCampaigns = jurorService
     .get()
     .then((response) => {
-      if (!response.data.length) {
+      if (!response || !response.length) {
         jurorCampaigns.value = []
         return
       }
 
       const roundsGroupedByCampaigns = _.groupBy(
-        response.data.filter((round) => round.status !== 'cancelled'),
+        response.filter((round) => round.status !== 'cancelled'),
         'campaign.id'
       )
 
