@@ -112,6 +112,7 @@
   "montage-round-finalized": "Round finalized successfully.",
   "montage-round-download-results": "Download results",
   "montage-round-download-entries": "Download entries",
+  "montage-round-download-reviews": "Download reviews",
   "montage-round-source": "Source",
   "montage-round-source-category": "Category on Wikimedia Commons",
   "montage-round-source-csv": "File List URL",
@@ -186,5 +187,6 @@
   "permission-denied-message": "You do not have the required permissions to access this page.",
   "permission-denied-home": "Go to Home",
   "montage-required-voting-deadline": "Choose a valid voting deadline",
-  "montage-required-fill-inputs": "Please fill all the boxes"
+  "montage-required-fill-inputs": "Please fill all the boxes",
+  "montage-required-threshold": "Please select a threshold to advance the round."
 }

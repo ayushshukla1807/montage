@@ -82,6 +82,7 @@ def get_admin_routes():
            GET('/admin/round/<round_id:int>/entries', get_round_entries),
            GET('/admin/round/<round_id:int>/entries/download', download_round_entries_csv),
            GET('/admin/round/<round_id:int>/reviews', get_round_reviews),
+           GET('/admin/round/<round_id:int>/reviews/download', download_round_reviews_csv),
            GET('/admin/campaign/<campaign_id:int>/report', get_campaign_report_raw)]
     ui = [GET('/admin/campaign/<campaign_id:int>/report', get_campaign_report,
               'report.html')]
@@ -836,6 +837,36 @@ def autodisqualify(user_dao, round_id, request_dict):
     data = [re.to_dq_details() for re in round_entries]
 
     return {'data': data}
+
+
+def download_round_reviews_csv(user_dao, round_id):
+    coord_dao = CoordinatorDAO.from_round(user_dao, round_id)
+    rnd = coord_dao.get_round(round_id)
+    now = datetime.datetime.now().isoformat()
+    output_name = 'montage_reviews-%s-%s.csv' % (slugify(rnd.name, ascii=True).decode('ascii'), now)
+
+    reviews = coord_dao.get_all_reviews(round_id)
+
+    output = io.BytesIO()
+    csv_fieldnames = ['filename', 'juror', 'review']
+    csv_writer = unicodecsv.DictWriter(output, fieldnames=csv_fieldnames,
+                                       restval=None)
+
+    csv_writer.writeheader()
+
+    for vote in reviews:
+        csv_row = {
+            'filename': vote.round_entry.entry.name,
+            'juror': vote.user.username,
+            'review': vote.flags.get('review')
+        }
+        csv_writer.writerow(csv_row)
+
+    ret = output.getvalue()
+    resp = Response(ret, mimetype='text/csv')
+    resp.mimetype_params['charset'] = 'utf-8'
+    resp.headers['Content-Disposition'] = 'attachment; filename=%s' % output_name
+    return resp
 
 
 def preview_disqualification(user_dao, round_id):

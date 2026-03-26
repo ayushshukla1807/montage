@@ -54,7 +54,7 @@ const adminService = {
   // Direct download URLs (manual baseURL needed)
   downloadRound: (id) => `${apiBackend.defaults.baseURL}admin/round/${id}/results/download`,
   downloadEntries: (id) => `${apiBackend.defaults.baseURL}admin/round/${id}/entries/download`,
-  downloadReviews: (id) => `${apiBackend.defaults.baseURL}admin/round/${id}/reviews`
+  downloadReviews: (id) => `${apiBackend.defaults.baseURL}admin/round/${id}/reviews/download`
 }
 
 export default adminService
