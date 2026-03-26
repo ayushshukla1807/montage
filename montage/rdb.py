@@ -1138,8 +1138,8 @@ class CoordinatorDAO(UserDAO):
     def get_campaign_rounds(self, campaign, with_cancelled=False):
         q = self.query(Round).filter_by(campaign=campaign)
         if not with_cancelled:
-            q.filter(Round.status != CANCELLED_STATUS)
-        q.order_by(Round.create_date)
+            q = q.filter(Round.status != CANCELLED_STATUS)
+        q = q.order_by(Round.create_date)
         return q.all()
 
     def get_active_jurors(self, round_id):
@@ -2575,7 +2575,12 @@ class JurorDAO(object):
             skip = round_juror.flags.get('skip')
         
         if skip:
-            return task_query.filter(Vote.id > skip).limit(num).all()
+            tasks = task_query.filter(Vote.id > skip).limit(num).all()
+            if len(tasks) < num:
+                # wrap around and show skipped tasks
+                more_tasks = task_query.filter(Vote.id <= skip).limit(num - len(tasks)).all()
+                tasks.extend(more_tasks)
+            return tasks
         
         return task_query.limit(num).all()
 

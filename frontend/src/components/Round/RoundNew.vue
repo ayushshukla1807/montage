@@ -325,6 +325,14 @@ const submitRound = () => {
     return
   }
 
+  // Check if threshold is required (for advancing rounds)
+  if (thresholds.value && formData.value.threshold === null) {
+    alertService.error({
+      message: $t('montage-required-threshold')
+    })
+    return
+  }
+
   // Check if the round is the first round
   if (roundIndex === 0) {
     const payload = {

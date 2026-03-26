@@ -12,7 +12,7 @@ import six
 import html
 
 
-MAX_RATINGS_SUBMIT = 100
+MAX_RATINGS_SUBMIT = 500
 VALID_RATINGS = (0.0, 0.25, 0.5, 0.75, 1.0)
 VALID_YESNO = (0.0, 1.0)
 
@@ -248,8 +248,9 @@ def submit_ratings(user_dao, request_dict):
     r_dicts = request_dict['ratings']
 
     if len(r_dicts) > MAX_RATINGS_SUBMIT:
-        raise InvalidAction('can submit up to 100 ratings at once, not %r'
-                            % len(r_dicts))
+        raise InvalidAction('System limit exceeded: can submit up to %s ratings at once, not %r. '
+                            'Please contact an administrator if you need to submit more.'
+                            % (MAX_RATINGS_SUBMIT, len(r_dicts)))
     elif not r_dicts:
         return {}  # submitting no ratings = immediate return
 
