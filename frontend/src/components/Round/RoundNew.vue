@@ -325,6 +325,17 @@ const submitRound = () => {
     return
   }
 
+  // Pre-flight check (Atomicity Improvement)
+  const importMethod = selectedImportSource.value
+  let importVal = importSourceValue.value[importMethod]
+  if (importMethod === 'selected') {
+    importVal = importVal.split('\n').filter((elem) => elem)
+  }
+  if (!importVal || (Array.isArray(importVal) && !importVal.length)) {
+    alertService.error(`Please provide a valid source for the ${importMethod} import.`)
+    return
+  }
+
   // Check if the round is the first round
   if (roundIndex === 0) {
     const payload = {
@@ -335,22 +346,24 @@ const submitRound = () => {
       quorum: formData.value.quorum,
       jurors: formData.value.jurors,
       directions: formData.value.directions,
-      config: formData.value.config
+      config: formData.value.config,
+      import_method: importMethod
+    }
+
+    if (importMethod === 'category') {
+      payload.category = importSourceValue.value.category
+    } else if (importMethod === 'csv') {
+      payload.csv_url = importSourceValue.value.csv_url
+    } else if (importMethod === 'selected') {
+      payload.file_names = importVal
     }
 
     isLoading.value = true
     adminService
-      .addRound(campaignId, payload)
+      .addRoundCombined(campaignId, payload)
       .then((resp) => {
         alertService.success($t('montage-round-added'))
-
-        if (selectedImportSource.value === 'selected') {
-          importSourceValue.value.file_names = importSourceValue.value.file_names
-            .split('\n')
-            .filter((elem) => elem)
-        }
-
-        importCategory(resp.data.id)
+        handleImportResponse(resp.data.import)
       })
       .catch(alertService.error)
       .finally(() => {
@@ -387,55 +400,34 @@ const submitRound = () => {
   }
 }
 
-const importCategory = (id) => {
-  const payload = {
-    import_method: selectedImportSource.value
-  }
+const handleImportResponse = (importData) => {
+  if (importData && importData.warnings && importData.warnings.length) {
+    const { warnings = [], disqualified = [] } = importData
 
-  if (selectedImportSource.value === 'category') {
-    payload.category = importSourceValue.value.category
-  } else if (selectedImportSource.value === 'csv') {
-    payload.csv_url = importSourceValue.value.csv_url
-  } else if (selectedImportSource.value === 'selected') {
-    payload.file_names = importSourceValue.value.file_names
-  }
+    const warningsList = warnings.map((warning) => Object.values(warning).pop())
+    const filesList = disqualified
+      .map((image) => `${image.entry.name} – ${image.dq_reason}`.trim())
+      .filter((value, index, array) => array.indexOf(value) === index)
+      .join('\n')
 
-  isLoading.value = true
-  adminService
-    .populateRound(id, payload)
-    .then((response) => {
-      if (response.data && response.data.warnings && response.data.warnings.length) {
-        const { warnings = [], disqualified = [] } = response.data
+    const text = `${warningsList.join('\n\n')}\n\n${filesList}`
 
-        const warningsList = warnings.map((warning) => Object.values(warning).pop())
-        const filesList = disqualified
-          .map((image) => `${image.entry.name} – ${image.dq_reason}`.trim())
-          .filter((value, index, array) => array.indexOf(value) === index)
-          .join('\n')
-
-        const text = `${warningsList.join('\n\n')}\n\n${filesList}`
-
-        dialogService().show({
-          title: 'Import Warning',
-          content: text,
-          primaryAction: {
-            label: 'OK',
-            actionType: 'progressive'
-          },
-          onPrimary: () => {
-            emit('reload-campaign-state')
-            emit('update:showAddRoundForm', false)
-          }
-        })
-      } else {
+    dialogService().show({
+      title: 'Import Warning',
+      content: text,
+      primaryAction: {
+        label: 'OK',
+        actionType: 'progressive'
+      },
+      onPrimary: () => {
         emit('reload-campaign-state')
         emit('update:showAddRoundForm', false)
       }
     })
-    .catch(alertService.error)
-    .finally(() => {
-      isLoading.value = false
-    })
+  } else {
+    emit('reload-campaign-state')
+    emit('update:showAddRoundForm', false)
+  }
 }
 
 watch(thresholds, (value) => {

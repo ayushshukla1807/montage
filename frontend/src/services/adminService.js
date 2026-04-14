@@ -18,6 +18,7 @@ const adminService = {
   addCampaign: (data) => apiBackend.post('admin/add_campaign', data),
 
   addRound: (id, data) => apiBackend.post(`admin/campaign/${id}/add_round`, data),
+  addRoundCombined: (id, data) => apiBackend.post(`admin/campaign/${id}/add_round_combined`, data),
 
   finalizeCampaign: (id) => apiBackend.post(`admin/campaign/${id}/finalize`, { post: true }),
 

@@ -47,6 +47,8 @@ def get_admin_routes():
            POST('/admin/campaign/<campaign_id:int>/cancel', cancel_campaign),
            POST('/admin/campaign/<campaign_id:int>/add_round',
                 create_round),
+           POST('/admin/campaign/<campaign_id:int>/add_round_combined',
+                create_round_combined),
            POST('/admin/campaign/<campaign_id:int>/add_coordinator',
                 add_coordinator),
            POST('/admin/campaign/<campaign_id:int>/remove_coordinator',
@@ -505,6 +507,35 @@ def create_round(user_dao, campaign_id, request_dict):
     data['progress'] = rnd.get_count_map()
 
     return {'data': data}
+
+
+def create_round_combined(user_dao, campaign_id, request_dict):
+    """
+    Summary: Create a new round and import entries in a single atomic operation.
+    If no entries are found, the transaction is rolled back via InvalidAction.
+    """
+    # 1. Create the round
+    round_res = create_round(user_dao, campaign_id, request_dict)
+    round_id = round_res['data']['id']
+
+    # 2. Import entries using the already available import_entries logic
+    # We pass the same request_dict which contains import_method, category, etc.
+    import_res = import_entries(user_dao, round_id, request_dict)
+
+    # 3. Validation: Atomicity check
+    # If new_round_entry_count is 0 or missing, it means no files were successfully 
+    # mapped to this new round.
+    if not import_res['data'].get('new_round_entry_count'):
+        raise InvalidAction('No entries were found for the specified source. '
+                            'Round creation has been rolled back to prevent '
+                            'leaving an empty round. Please check your category '
+                            'name or file list and try again.')
+
+    # 4. Return combined success
+    return {'data': {
+        'round': round_res['data'],
+        'import': import_res['data']
+    }}
 
 
 def edit_round(user_dao, round_id, request_dict):
