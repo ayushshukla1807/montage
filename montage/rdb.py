@@ -139,6 +139,7 @@ class User(Base):
     last_active_date = Column(DateTime)
 
     create_date = Column(TIMESTAMP, server_default=func.now())
+    consent_to_share_votes = Column(Boolean, default=False)  # for public vote visibility
     flags = Column(JSONEncodedDict)
 
     created_by = Column(Integer, ForeignKey('users.id'))
@@ -1138,8 +1139,8 @@ class CoordinatorDAO(UserDAO):
     def get_campaign_rounds(self, campaign, with_cancelled=False):
         q = self.query(Round).filter_by(campaign=campaign)
         if not with_cancelled:
-            q.filter(Round.status != CANCELLED_STATUS)
-        q.order_by(Round.create_date)
+            q = q.filter(Round.status != CANCELLED_STATUS)  # exclude cancelled
+        q = q.order_by(Round.create_date)
         return q.all()
 
     def get_active_jurors(self, round_id):
@@ -2570,12 +2571,15 @@ class JurorDAO(object):
         
         round_juror = self._get_round_juror(round_id)
         
-        skip = None
+        # use skips as an offset so we don't get stuck on missing Vote IDs.
+        # it was logic from a previous dev that used a "pointer" id, but 
+        # this handles duplicates better.
+        skips = 0
         if round_juror and round_juror.flags:
-            skip = round_juror.flags.get('skip')
+            skips = round_juror.flags.get('skip_count', 0)
         
-        if skip:
-            return task_query.filter(Vote.id > skip).limit(num).all()
+        if skips:
+            task_query = task_query.offset(skips).limit(num).all()
         
         return task_query.limit(num).all()
 
@@ -2836,13 +2840,15 @@ class JurorDAO(object):
         if round_juror.flags is None:
             round_juror.flags = {}
         
-        current_skip = round_juror.flags.get('skip')
-        if current_skip is None or vote_id > current_skip:
-            round_juror.flags['skip'] = vote_id
-            
-            flag_modified(round_juror, 'flags')
-            
-            self.rdb_session.add(round_juror)
+        # Increment skip_count to reliably advance the queue
+        current_skip_count = round_juror.flags.get('skip_count', 0)
+        round_juror.flags['skip_count'] = current_skip_count + 1
+        
+        # Legacy support for 'skip' ID flag
+        round_juror.flags['skip'] = vote_id
+        
+        flag_modified(round_juror, 'flags')
+        self.rdb_session.add(round_juror)
         
         return
 
