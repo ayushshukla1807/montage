@@ -35,7 +35,7 @@
         </cdx-button>
       </div>
 
-      <cdx-button weight="quiet" action="progressive" @click="saveRanking">
+      <cdx-button weight="quiet" action="progressive" @click="saveRanking" :disabled="isLoading">
         <content-save-outline class="icon-small" />
         {{ $t('montage-round-save') }}
       </cdx-button>
@@ -128,6 +128,7 @@ const roundLink = [props.round.id, props.round.canonical_url_name].join('-')
 const images = ref(null)
 const stats = ref(null)
 const gridSize = ref(1)
+const isLoading = ref(false)
 
 const setGridSize = (size) => {
   gridSize.value = size
@@ -164,6 +165,9 @@ const openImage = (image) => {
 }
 
 const saveRanking = () => {
+  if (isLoading.value) return
+  isLoading.value = true
+
   const ratings = images.value.map((image, index) => ({
     task_id: image.id,
     value: index,
@@ -176,6 +180,9 @@ const saveRanking = () => {
       router.go(0)
     })
     .catch(alertService.error)
+    .finally(() => {
+      isLoading.value = false
+    })
 }
 
 const editPreviousVotes = () => {

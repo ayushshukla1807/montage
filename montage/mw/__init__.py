@@ -66,13 +66,18 @@ class MessageMiddleware(Middleware):
             if self.debug_errors and not isinstance(e, MontageError):
                 import pdb; pdb.post_mortem()
                 import pdb;pdb.set_trace()
-            if self.raise_errors:
+            if self.raise_errors and not isinstance(e, MontageError):
                 raise
             ret = None
-            exc_info = ExceptionInfo.from_current()
-            err = '%s: %s' % (exc_info.exc_type, exc_info.exc_msg)
-            response_dict['errors'].append(err)
-            response_dict['status'] = 'exception'
+            if isinstance(e, MontageError):
+                response_dict['status'] = 'failure'
+                response_dict['errors'].append(str(e))
+                status_code = getattr(e, 'code', 400)
+            else:
+                exc_info = ExceptionInfo.from_current()
+                err = '%s: %s' % (exc_info.exc_type, exc_info.exc_msg)
+                response_dict['errors'].append(err)
+                response_dict['status'] = 'exception'
         else:
             status_code = response_dict.pop('_status_code', None)
             if response_dict.get('errors'):
@@ -376,13 +381,12 @@ class ReplayLogMiddleware(Middleware):
             log_file.write(json.dumps(data, sort_keys=True) + '\n')
             log_file.flush()
         except Exception:
-            sys.stderr.write('failed to write replay log in %s\n'
-                             % os.getpid())
-            sys.stderr.flush()
+            # Catch errors like InvalidAction so we can return them nicely to the frontend
+            # instead of just crashing with a 500 error.
         try:
-            ret = next()
-        except Exception as e:
-            exc_data = {'id': cur_id, 'exception': repr(e)}
+            return next()
+        except MontageError as e:
+            return {'status': 'failure', 'message': str(e)}
             try:
                 log_file.write(json.dumps(exc_data, sort_keys=True) + '\n')
             except Exception:
