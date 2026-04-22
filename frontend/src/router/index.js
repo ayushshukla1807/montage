@@ -11,6 +11,8 @@ import VoteView from '@/views/VoteView.vue'
 import VoteEditView from '@/views/VoteEditView.vue'
 import AllCampaignView from '@/views/AllCampaignView.vue'
 import PermissionDenied from '@/views/PermissionDenied.vue'
+import UserSettings from '@/views/UserSettings.vue'
+import RoundEntries from '@/views/RoundEntries.vue'
 
 const routes = [
   {
@@ -52,6 +54,18 @@ const routes = [
     path: '/permission-denied',
     name: 'permission-denied',
     component: PermissionDenied
+  },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: UserSettings,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/round/:id/entries',
+    name: 'round-entries',
+    component: RoundEntries,
+    meta: { requiresAuth: true }
   }
 ]
 

@@ -50,7 +50,8 @@ def get_juror_routes():
            POST('/juror/round/<round_id:int>/<entry_id:int>/unfave',
                 remove_fave),
            POST('/juror/round/<round_id:int>/<entry_id:int>/flag', submit_flag),
-           GET('/juror/faves', get_faves)]
+           GET('/juror/faves', get_faves),
+           POST('/juror/settings', update_settings)]
     ui = []
     return api, ui
 
@@ -370,6 +371,17 @@ def submit_flag(user_dao, round_id, entry_id, request_dict):
     reason = request_dict.get('reason')
     juror_dao.flag(round_id, entry_id, reason)
 
+
+
+def update_settings(user_dao, request_dict):
+    consent = request_dict.get('consent_to_share_votes')
+    if consent is not None:
+        user_dao.user.consent_to_share_votes = bool(consent)
+    
+    # allow updating other settings in the future here
+    
+    user_dao.rdb_session.commit()
+    return {'data': user_dao.user.to_dict()}
 
 
 JUROR_API_ROUTES, JUROR_UI_ROUTES = get_juror_routes()

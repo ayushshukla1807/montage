@@ -128,6 +128,16 @@
     <cdx-button @click="downloadEntries">
       <image-multiple style="font-size: 6px" /> {{ $t('montage-round-download-entries') }}
     </cdx-button>
+
+    <cdx-button @click="syncMetadata" :disabled="isSyncing">
+      <refresh style="font-size: 6px" v-if="!isSyncing" />
+      <clip-loader v-else color="#36D7B7" size="14px" style="margin-right: 8px" />
+      {{ isSyncing ? 'Syncing...' : 'Sync Commons Metadata' }}
+    </cdx-button>
+
+    <cdx-button @click="$router.push({ name: 'round-entries', params: { id: round.id } })">
+      <image-multiple style="font-size: 6px" /> {{ $t('montage-manage-entries') }}
+    </cdx-button>
   </div>
 </template>
 
@@ -147,6 +157,7 @@ import Pause from 'vue-material-design-icons/Pause.vue'
 import Check from 'vue-material-design-icons/Check.vue'
 import Download from 'vue-material-design-icons/Download.vue'
 import ImageMultiple from 'vue-material-design-icons/ImageMultiple.vue'
+import Refresh from 'vue-material-design-icons/Refresh.vue'
 
 const { t: $t } = useI18n()
 const props = defineProps({
@@ -155,6 +166,7 @@ const props = defineProps({
 
 const roundDetails = ref(null)
 const roundResults = ref(null)
+const isSyncing = ref(false)
 
 const remainingDays = computed(() => {
   const deadline = new Date(props.round.deadline_date)
@@ -214,6 +226,23 @@ const finalizeRound = () => {
       })
       .catch(alertService.error)
   }
+}
+
+const syncMetadata = () => {
+  isSyncing.value = true
+  adminService
+    .syncMetadata(props.round.id)
+    .then((data) => {
+      if (data.status === 'success') {
+        alertService.success(`Successfully synced metadata for ${data.updated_count} files.`)
+        // Refresh the page to show new metadata
+        location.reload()
+      }
+    })
+    .catch(alertService.error)
+    .finally(() => {
+      isSyncing.value = false
+    })
 }
 
 function downloadResults() {

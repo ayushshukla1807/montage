@@ -3,6 +3,10 @@
     <router-link to="/" class="header-title">MONTAGE</router-link>
     <div style="display: flex">
       <div v-if="userStore.user !== null" class="header-user">
+        <router-link to="/settings" class="account-info-container settings-link">
+          <cog-icon class="account-info-icon" />
+          <span>{{ $t('montage-settings') }}</span>
+        </router-link>
         <div class="account-info-container">
           <account class="account-info-icon" />
           <span>{{ userStore.user.username }}</span>
@@ -32,6 +36,7 @@ import { CdxButton, CdxSelect } from '@wikimedia/codex'
 
 // Icons
 import Account from 'vue-material-design-icons/Account.vue'
+import CogIcon from 'vue-material-design-icons/Cog.vue'
 
 const userStore = useUserStore()
 const { locale, messages } = useI18n()
@@ -77,6 +82,16 @@ onMounted(() => {
   font-weight: bold;
   color: #000;
   text-decoration: none;
+}
+
+.settings-link {
+  color: #006cb6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.settings-link:hover {
+  text-decoration: underline;
 }
 
 .account-info-container {

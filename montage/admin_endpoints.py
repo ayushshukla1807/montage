@@ -57,6 +57,7 @@ def get_admin_routes():
            POST('/admin/campaign/<campaign_id:int>/unpublish', unpublish_report),
            GET('/admin/campaign/<campaign_id:int>/audit', get_campaign_log),
            POST('/admin/round/<round_id:int>/import', import_entries),
+           POST('/admin/round/<round_id:int>/sync_metadata', sync_metadata),
            POST('/admin/round/<round_id:int>/activate', activate_round),
            POST('/admin/round/<round_id:int>/pause', pause_round),
            POST('/admin/round/<round_id:int>/finalize', finalize_round),
@@ -95,6 +96,44 @@ def get_round_reviews(user_dao, round_id):
     entries = coord_dao.get_reviews_table(round_id)
     entry_infos = [e.to_details_dict() for e in entries]
     return {'data': entry_infos}
+
+
+def sync_metadata(user_dao, round_id):
+    """
+    Summary: Sync image metadata (filenames, author, description) with Wikimedia Commons.
+    Goes through all entries in a round and updates them.
+    Follows redirects for renamed files.
+    """
+    from .labs import get_file_info
+    coord_dao = CoordinatorDAO.from_round(user_dao, round_id)
+    round_model = coord_dao.get_round(round_id)
+    
+    # This might be slow for very large rounds, so we do it in a loop
+    # In a full production system, this would be a background task.
+    updated_count = 0
+    for entry in round_model.entries:
+        try:
+            # We use the existing filename to look up the newest info
+            info = get_file_info(entry.name)
+            if info:
+                # Update filename if it changed (redirect followed)
+                new_name = info['name']
+                if new_name != entry.name:
+                    entry.name = new_name
+                
+                # Update other metadata
+                entry.description = info.get('description', entry.description)
+                entry.author = info.get('author', entry.author)
+                # We could update resolution etc. here too
+                
+                updated_count += 1
+        except Exception as e:
+            print('!! failed to sync metadata for %s: %s' % (entry.name, e))
+            continue
+    
+    user_dao.rdb_session.commit()
+    
+    return {'status': 'success', 'updated_count': updated_count}
 
 
 def get_round_entries(user_dao, round_id):

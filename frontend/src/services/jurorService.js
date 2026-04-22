@@ -81,7 +81,8 @@ const jurorService = {
         return data
       })
     })
-  }
+  },
+  updateSettings: (data) => apiBackend.post('juror/settings', data)
 }
 
 export default jurorService
