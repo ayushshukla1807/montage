@@ -67,7 +67,7 @@
         </p>
         <p>
           <strong>{{ $t('montage-round-cancelled-tasks') }}:</strong>
-          {{ rroundResults?.counts.total_cancelled_tasks }}
+          {{ roundResults?.counts.total_cancelled_tasks }}
         </p>
         <p>
           <strong>{{ $t('montage-round-disqualified-files') }}:</strong>
@@ -193,7 +193,12 @@ const pauseRound = () => {
 }
 
 const finalizeRound = () => {
-  const completionPercentage = Math.round(roundDetails.value?.is_closable || 0)
+  const stats = roundDetails.value
+  const totalTasks = stats?.progress?.total_tasks || 0
+  const openTasks = stats?.progress?.total_open_tasks || 0
+  const completionPercentage = totalTasks > 0
+    ? Math.round(((totalTasks - openTasks) / totalTasks) * 100)
+    : 0
 
   const confirmText =
     completionPercentage === 100
